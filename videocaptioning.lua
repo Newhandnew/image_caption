@@ -84,7 +84,7 @@ if opt.gpuid >= 0 then for k,v in pairs(protos) do v:cuda() end end
 -- Webcam setup
 -------------------------------------------------------------------------------
 cv.namedWindow{winname="NeuralTalk2", flags=cv.WINDOW_AUTOSIZE}
-local cap = cv.VideoCapture{device=0}
+local cap = cv.VideoCapture{device=1}
 if not cap:isOpened() then
   print("Failed to open the default camera")
   os.exit(-1)
@@ -113,7 +113,7 @@ local function caption(image)
     local seq = protos.lm:sample(feats, sample_opts)
     local sents = net_utils.decode_sequence(vocab, seq)
     return sents
-
+end
 
 local function run()
   protos.cnn:evaluate()
@@ -127,9 +127,10 @@ local function run()
     -- local crop = cv.getRectSubPix{image=frame, patchSize={h,h}, center={w/2, h/2}}
 
     cv.imshow{winname="NeuralTalk2", image=frame}
-    if cv.waitKey{30} >= 0 then 
+    key = cv.waitKey{100}
+    if key == 1048603 then 		--"ESC"
       break
-    elseif cv.waitKey{33} >= 0 then
+    elseif key == 1048673 then		--"a"
       sentence = caption(frame)
       print(sentence[1])
 
