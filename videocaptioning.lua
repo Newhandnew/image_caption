@@ -63,7 +63,7 @@ end
 -- Load the model checkpoint to evaluate
 -------------------------------------------------------------------------------
 assert(string.len(opt.model) > 0, 'must provide a model')
-local checkpoint = torch.load(opt.model)
+local checkpoint = torch.load(opt.model, 'ascii')
 -- override and collect parameters
 if opt.batch_size == 0 then opt.batch_size = checkpoint.opt.batch_size end
 local fetch = {'rnn_size', 'input_encoding_size', 'drop_prob_lm', 'cnn_proto', 'cnn_model', 'seq_per_img'}
@@ -78,12 +78,15 @@ local vocab = checkpoint.vocab -- ix -> word mapping
 local protos = checkpoint.protos
 protos.expander = nn.FeatExpander(opt.seq_per_img)
 protos.lm:createClones() -- reconstruct clones inside the language model
-if opt.gpuid >= 0 then for k,v in pairs(protos) do v:cuda() end end
+if opt.gpuid >= 0 then
+  print("gpu") 
+  for k,v in pairs(protos) do v:cuda() end 
+end
 
 -------------------------------------------------------------------------------
 -- Webcam setup
 -------------------------------------------------------------------------------
-cv.namedWindow{winname="NeuralTalk2", flags=cv.WINDOW_AUTOSIZE}
+-- cv.namedWindow{winname="NeuralTalk2", flags=cv.WINDOW_AUTOSIZE}
 local cap = cv.VideoCapture{device=1}
 if not cap:isOpened() then
   print("Failed to open the default camera")
@@ -126,13 +129,18 @@ local function run()
     -- take a central crop
     -- local crop = cv.getRectSubPix{image=frame, patchSize={h,h}, center={w/2, h/2}}
 
-    cv.imshow{winname="NeuralTalk2", image=frame}
-    key = cv.waitKey{100}
-    if key == 1048603 then 		--"ESC"
+    -- cv.imshow{winname="NeuralTalk2", image=frame}
+    cv.waitKey{50}
+    io.write("input command (c/q)? ")
+    io.flush()
+    key = io.read()
+    if key == "q" then 		
       break
-    elseif key == 1048673 then		--"a"
+    elseif key == "c" then		--"a"
       sentence = caption(frame)
       print(sentence[1])
+      command = 'google_speech -l en "' .. sentence[1] .. '"'
+      assert(io.popen(command))
 
     -- cv.putText{
     --   img=crop,
